@@ -1,5 +1,5 @@
-#JUNKMAIL
-##A game
+# JUNKMAIL
+## A game
 ---
 a cool game
 made by AI
