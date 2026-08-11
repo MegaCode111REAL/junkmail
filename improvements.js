@@ -40,7 +40,7 @@
   `;document.head.appendChild(style);
 
   function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
-  function result(title,lines,duration=6500){
+  function result(title,lines,duration=3500){
     let box=document.getElementById("eventResult");if(!box){box=document.createElement("div");box.id="eventResult";box.className="event-result";document.body.appendChild(box)}
     clearTimeout(window.__junkmailResultTimer);const arr=(Array.isArray(lines)?lines:[lines]).filter(Boolean);
     box.innerHTML=`<div class="event-result-title">${escapeHtml(title)}</div>`+arr.map(x=>{const value=typeof x==="string"?x:x.text;const cls=typeof x==="string"?"":(x.className||"");return `<div class="event-result-line ${cls}">${escapeHtml(value)}</div>`}).join("");
