@@ -272,6 +272,19 @@
           maybeEvent();
           render();
         }
+        const STORY_EVENT_TITLES = [
+          "🔑 Locked Shed",
+          "📷 Someone in the Photograph",
+          "📻 The Broadcast",
+          "📬 Anonymous Letter"
+        ];
+
+        function storyEventChance() {
+          if (state.day < 50) return 0;
+          if (state.day < 75) return 0.25;
+          if (state.day <= 100) return 0.75;
+          return 1;
+        }
         function maybeEvent(){
           if(!chance(.42))return;
           state.stats.events++;
@@ -1004,9 +1017,42 @@
           }
         
         ];
-          let e=rand(events);
-          showEvent(e);
-        }
+          state.storyEvents = state.storyEvents || {};
+
+  const pendingStoryEvents = events.filter(e =>
+    STORY_EVENT_TITLES.includes(e.title) &&
+    !state.storyEvents[e.title]
+  );
+
+  let e;
+
+  if(pendingStoryEvents.length > 0){
+
+    let storyChance = storyEventChance();
+
+    if(Math.random() < storyChance){
+
+      // Pick one of the pending story events.
+      e = pendingStoryEvents[
+        Math.floor(Math.random() * pendingStoryEvents.length)
+      ];
+
+    }else{
+
+      // Normal random event.
+      e = rand(events);
+    }
+
+  }else{
+
+    // All story events have happened.
+    e = rand(events);
+
+  }
+
+  showEvent(e);
+}
+
         function showEvent(e){
           let area=document.getElementById("eventArea");
         
@@ -1428,6 +1474,6 @@
     </script>
     <script src="improvements.js"></script>
     <script src="tutorial.js"></script>
-    <script src="story_events.js"></script>
 </body>
+
 </html>
