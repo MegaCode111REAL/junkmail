@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>JUNKMAIL</title>
+    <style>
+        *{box-sizing:border-box}
+        :root{--bg:#11120f;--panel:#1b1d18;--panel2:#24271f;--text:#eee9d8;--muted:#a9aa9a;--accent:#e3b95b;--good:#86c978;--bad:#d86f68}
+        body{margin:0;background:radial-gradient(circle at 50% -20%,#303426 0,#11120f 55%);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+        button{font:inherit;color:inherit;border:1px solid #45493b;background:#292c24;border-radius:9px;padding:10px 13px;cursor:pointer}
+        button:hover{background:#34382d;border-color:#656a57}
+        button:disabled{opacity:.45;cursor:not-allowed}
+        #app{max-width:1050px;margin:auto;padding:18px}
+        header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px}
+        .logo{font-weight:900;letter-spacing:3px;font-size:25px}.tag{color:var(--muted);font-size:12px}
+        .stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.pill{background:#1c1e19;border:1px solid #3b3e33;border-radius:99px;padding:7px 11px;color:#ddd7c4}
+        main{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
+        .panel{background:rgba(27,29,24,.94);border:1px solid #3b3e33;border-radius:14px;padding:15px;box-shadow:0 10px 30px #0004}
+        h2,h3{margin:0 0 10px}.muted{color:var(--muted)}
+        .package{min-height:260px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:2px dashed #555849;border-radius:14px;background:#151712;margin-bottom:13px}
+        .box{font-size:76px;filter:drop-shadow(0 8px 5px #0008)}.package b{font-size:21px}.package small{color:var(--muted);margin-top:4px}
+        .inventory{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:8px}
+        .item{position:relative;text-align:left;min-height:86px}.item .emoji{font-size:27px;display:block}.item small{display:block;color:var(--muted);margin-top:3px}
+        .item.selected{outline:2px solid var(--accent);background:#373223}
+        .badge{position:absolute;right:7px;top:7px;font-size:10px;color:#d8cda9}
+        .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+        .log{height:220px;overflow:auto;background:#10110e;border-radius:9px;padding:10px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.5}
+        .log div{margin-bottom:6px}.event{border-left:3px solid var(--accent);padding:10px 12px;background:#20221c;border-radius:7px;margin-bottom:10px}
+        .choice{width:100%;text-align:left;margin-top:7px}.choice b{display:block}.choice span{font-size:12px;color:var(--muted)}
+        .tabbar{display:flex;gap:6px;margin-bottom:10px}.tabbar button.active{background:#45422d;border-color:var(--accent)}
+        .hidden{display:none}
+        .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#292c24;border:1px solid #656a57;padding:11px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:4}.toast.show{opacity:1}
+        .modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;z-index:3}.modal>div{max-width:650px;width:100%;max-height:85vh;overflow:auto;background:#1b1d18;border:1px solid #555849;border-radius:14px;padding:18px}
+        @media(max-width:760px){main{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}.stats{justify-content:flex-start}}
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <div>
+                <div class="logo">JUNKMAIL</div>
+                <div class="tag">the mystery-box economy</div>
+            </div>
+            <div class="stats">
+                <div class="pill">💵 $<span id="money">25</span></div>
+                <div class="pill">📦 Day <span id="day">1</span></div>
+                <div class="pill">⭐ <span id="discoveries">0</span> discoveries</div>
+            </div>
+        </header>
+
+        <main>
+            <section class="panel">
+                <div class="tabbar">
+                    <button class="active" data-tab="mail">📬 Mail</button>
+                    <button data-tab="inv">🎒 Inventory</button>
+                    <button data-tab="shop">🛒 Marketplace</button>
+                </div>
+
+                <div id="mailTab">
+                    <div id="package" class="package"></div>
+                    <div class="actions">
+                        <button id="openBtn">Open today's package</button>
+                        <button id="buyBtn">Buy mystery box ($10)</button>
+                    </div>
+                    <div id="eventArea" style="margin-top:13px"></div>
+                </div>
+
+                <div id="invTab" class="hidden">
+                    <h3>Your junk</h3>
+                    <div id="inventory" class="inventory"></div>
+                    <div id="selectedArea" class="actions"></div>
+                </div>
+
+                <div id="shopTab" class="hidden">
+                    <h3>Marketplace</h3>
+                    <div class="event">
+                        <b>📦 Mystery Box — $10</b>
+                        <br><span class="muted">Contains 2–4 objects. Occasionally contains something very weird.</span>
+                        <div class="actions">
+                            <button onclick="buyBox()">Buy one</button>
+                        </div>
+                    </div>
+                    <div class="event">
+                        <b>🔎 Pocket Magnifier — $35</b>
+                        <br><span class="muted">Reveals one hidden clue on a suitable item.</span>
+                        <div class="actions">
+                            <button id="magnifyBtn" onclick="buyMagnifier()">Buy magnifier</button>
+                        </div>
+                    </div>
+                    <div class="event">
+                        <b>🗄️ Storage Upgrade — $60</b>
+                        <br><span class="muted">Increases your inventory capacity by 8.</span>
+                        <div class="actions">
+                            <button id="storageBtn" onclick="buyStorage()">Buy upgrade</button>
+                        </div>
+                    </div>
+                    <div class="event">
+                        <b>♻️ Duplicate Auto-Seller — $45</b>
+                        <br>
+                        <span class="muted">Automatically sells duplicate items when you receive them.</span>
+                        <div class="actions">
+                            <button id="autoSellBtn" onclick="buyAutoSell()">Buy ($45)</button>
+                        </div>
+                    </div>
+                    <div class="event">
+                        <b>📦 Bulk Mail Contract — $25</b>
+                        <br>
+                        <span class="muted">Every third day, receive one extra package.</span>
+                        <div class="actions">
+                            <button onclick="buyMailContract()">Buy ($25)</button>
+                        </div>
+                    </div>
+                    <div class="event">
+                        <b>💰 Better Buyers — $40</b>
+                        <br>
+                        <span class="muted">Sell items for 25% more money.</span>
+                        <div class="actions">
+                            <button onclick="buyBetterBuyers()">Buy ($40)</button>
+                        </div>
+                    </div>
+                    <div class="event">
+                        <b>📡 Signal Scanner — $75</b>
+                        <br>
+                        <span class="muted">Occasionally reveals when an item is connected to the mystery.</span>
+                        <div class="actions">
+                            <button onclick="buyScanner()">Buy ($75)</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel">
+                <h3>📓 Case notes</h3>
+                <div id="log" class="log"></div>
+                <div class="actions">
+                    <button onclick="showDiscoveries()">Discoveries</button>
+                    <button onclick="showStats()">Statistics</button>
+                    <button onclick="saveGame();toast('Game saved')">Save</button>
+                    <button onclick="resetGame()">Reset</button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div id="modal" class="hidden">
+        <div>
+            <div id="modalContent"></div>
+            <div class="actions">
+                <button onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+        "use strict";
+        
+        function modal(html){
+          const modal = document.getElementById("modal");
+          const content = document.getElementById("modalContent");
+        
+          if (!html || !String(html).trim()) {
+            modal.classList.add("hidden");
+            return;
+          }
+        
+          content.innerHTML = html;
+          modal.classList.remove("hidden");
+        }
+        
+        const ITEMS = {
+         battery:{name:"Dead Battery",emoji:"🪫",value:4,tags:["electric","metal"],desc:"Completely dead. Probably.",clue:"Its casing has tiny scratches around the contacts."},
+         magnet:{name:"Strong Magnet",emoji:"🧲",value:7,tags:["magnet","metal"],desc:"Stronger than it looks.",clue:"It hums faintly near certain objects."},
+         bear:{name:"Toy Bear",emoji:"🧸",value:3,tags:["toy","soft"],desc:"One eye is missing.",clue:"Something hard is sewn inside."},
+         radio:{name:"Broken Radio",emoji:"📻",value:8,tags:["electric","radio"],desc:"Only static comes out.",clue:"The tuning dial stops at 83.7."},
+         coin:{name:"Strange Coin",emoji:"🪙",value:12,tags:["metal","mystery"],desc:"No country or date.",clue:"One side has a tiny door symbol."},
+         key:{name:"Rusty Key",emoji:"🔑",value:6,tags:["metal","key"],desc:"Old-fashioned and warm.",clue:"It has three notches and one impossible groove."},
+         disk:{name:"Unlabeled Disk",emoji:"💿",value:10,tags:["data","mystery"],desc:"No computer recognizes it.",clue:"A sector contains the number 837."},
+         bottle:{name:"Blue Bottle",emoji:"🧪",value:5,tags:["liquid","mystery"],desc:"The liquid glows in darkness.",clue:"The label says only: DO NOT SHAKE."},
+         screwdriver:{name:"Screwdriver",emoji:"🪛",value:5,tags:["tool","metal"],desc:"Useful, at least.",clue:"The tip fits a surprisingly tiny screw."},
+         box:{name:"Tiny Locked Box",emoji:"📦",value:15,tags:["locked","metal"],desc:"Too small to fit a keyhole you can see.",clue:"The lid has a coin-shaped depression."},
+         photo:{name:"Old Photograph",emoji:"📷",value:9,tags:["photo","mystery"],desc:"A house you've never seen.",clue:"A street sign reads 83."},
+         tape:{name:"Cassette Tape",emoji:"📼",value:6,tags:["data","radio"],desc:"Handwritten: 'RETURN IT'.",clue:"The tape is labelled 7."},
+         gear:{name:"Tiny Gear",emoji:"⚙️",value:4,tags:["metal","machine"],desc:"Precisely manufactured.",clue:"It fits the inside of the toy bear."}
+        };
+        
+        const START_ITEMS=["screwdriver","battery","bear"];
+        let state = {
+         money:25, day:1, inv:[], openedToday:false, selected:null,
+         discoveries:[], discoveredNames:[], logs:[],
+         magnifier:false,
+        autoSellDuplicates:false,
+        mailContract:false,
+        betterBuyers:false,
+        scanner:false,
+        storage:16,
+         stats:{boxes:0,sold:0,spent:0,events:0,opened:0}
+        };
+        
+        function uid(){return Math.random().toString(36).slice(2,9)}
+        function rand(a){return a[Math.floor(Math.random()*a.length)]}
+        function chance(n){return Math.random()<n}
+        function saveGame(){localStorage.setItem("junkmail-save",JSON.stringify(state))}
+        function loadGame(){try{let s=JSON.parse(localStorage.getItem("junkmail-save"));if(s)state=Object.assign(state,s)}catch(e){}}
+        function toast(t){let x=document.getElementById("toast");x.textContent=t;x.classList.add("show");clearTimeout(window.tt);window.tt=setTimeout(()=>x.classList.remove("show"),1800)}
+        function log(t){state.logs.unshift("Day "+state.day+" — "+t);state.logs=state.logs.slice(0,80);renderLog();saveGame()}
+        function item(id){return ITEMS[id]}
+        function count(id){return state.inv.filter(x=>x.id===id).length}
+        function addItem(id,extra={}) {
+          if(state.inv.length>=state.storage){toast("Your storage is full.");return false}
+          if(state.autoSellDuplicates && has(id)){
+            const value = ITEMS[id].value;
+            state.money += value;
+            state.stats.sold++;
+            log("Auto-sold duplicate "+ITEMS[id].name+" for $"+value+".");
+            return true;
+          }
+          state.inv.push({id,uid:uid(),identified:false,...extra});
+          return true;
+        }
+        function removeItem(uid){let i=state.inv.findIndex(x=>x.uid===uid);if(i>=0)state.inv.splice(i,1)}
+        function has(id){return state.inv.some(x=>x.id===id)}
+        function find(id){return state.inv.find(x=>x.id===id)}
+        
+        function generateBox(){
+          let pool=["battery","magnet","bear","radio","coin","key","disk","bottle","screwdriver","box","photo","tape","gear"];
+          let ids=[];
+          let n=2+Math.floor(Math.random()*3);
+          for(let i=0;i<n;i++){
+            let id;
+            if(chance(.08) && state.day>3) id=rand(["coin","box","disk","photo"]);
+            else id=rand(pool);
+            ids.push(id);
+          }
+          return ids;
+        }
+        function openPackage(){
+          if(state.openedToday){toast("Today's package is already open.");return}
+          state.openedToday=true;state.stats.opened++;
+          let ids=generateBox(), got=[];
+          ids.forEach(id=>{if(addItem(id))got.push(id)});
+          state.stats.boxes++;
+          document.getElementById("package").innerHTML=`<div class="box">📦</div><b>Today's package contained:</b><small>${got.map(id=>ITEMS[id].emoji+" "+ITEMS[id].name).join(" · ")}</small>`;
+          log("Opened a package containing "+got.map(id=>ITEMS[id].name).join(", ")+".");
+          maybeEvent();
+          render();
+          if(state.scanner && chance(.35)){
+          const mysteryItems=got.filter(id=>ITEMS[id].tags.includes("mystery"));
+        
+          if(mysteryItems.length){
+            const found=ITEMS[mysteryItems[0]];
+            discover(
+                "Scanner Result",
+                found.name+" contains an unusual signal. It may connect to other mystery objects."
+              );
+              log("The signal scanner detected something unusual in "+found.name+".");
+            }
+          }
+        }
+        function buyBox(){
+          if(state.money<10){toast("Not enough money.");return}
+          state.money-=10;state.stats.spent+=10;state.openedToday=false;openPackage();
+        }
+        function nextDay(){
+          state.day++;state.openedToday=false;state.selected=null;
+          state.money+=3;
+          document.getElementById("package").innerHTML=`<div class="box">📮</div><b>New mail has arrived.</b><small>Daily allowance: +$3</small>`;
+          log("A new day begins.");
+          maybeEvent();
+          render();
+        }
+        function maybeEvent(){
+          if(!chance(.42))return;
+          state.stats.events++;
+          let events=[
+        
+          {
+            title:"📦 Wrong Address",
+            text:"A package has been left outside your door. The label has your house number, but a completely different name.",
+            choices:[
+              ["Keep it",()=>{
+                const id=rand(["box","coin","disk","photo"]);
+                addItem(id);
+                log("Kept the wrongly delivered package.");
+              }],
+              ["Return it",()=>{
+                state.money+=8;
+                log("Returned the package.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🧑‍🔧 The Collector",
+            text:"A stranger messages you: \"I'm looking for something old. You might have it.\"",
+            choices:[
+              ["Ask what they want",()=>{
+                discover(
+                  "The Collector",
+                  "Someone is searching for a specific object in your collection."
+                );
+                log("Asked the collector what they were looking for.");
+              }],
+              ["Show them your collection",()=>{
+                const metal=state.inv.filter(x=>ITEMS[x.id].tags.includes("metal"));
+        
+                if(metal.length>=2){
+                  state.money+=20;
+                  discover(
+                    "The Collector's Interest",
+                    "The collector seems particularly interested in the unusual metal objects."
+                  );
+                  log("Showed the collector your unusual objects.");
+                }else{
+                  log("The collector wasn't interested in what you had.");
+                }
+              }],
+              ["Ignore the message",()=>{
+                log("Ignored the collector.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📻 Sudden Static",
+            text:"Your room fills with static. You aren't sure whether it's coming from the radio.",
+            choices:[
+              ["Check the radio",()=>{
+                if(has("radio")){
+                  discover(
+                    "83.7",
+                    "The radio briefly locks onto 83.7 before returning to static."
+                  );
+                  log("Checked the radio during the interference.");
+                }else{
+                  log("There was no radio to investigate.");
+                }
+              }],
+              ["Check the window",()=>{
+                if(chance(.5)){
+                  state.money+=5;
+                  log("You find a small envelope outside containing $5.");
+                }else{
+                  log("There was nothing outside.");
+                }
+              }],
+              ["Do nothing",()=>{
+                log("Ignored the strange static.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🚪 The Knock",
+            text:"Someone knocks three times. When you open the door, nobody is there.",
+            choices:[
+              ["Search outside",()=>{
+                if(chance(.5)){
+                  addItem(rand(["coin","key","photo"]));
+                  log("You found something strange outside.");
+                }else{
+                  log("You found nothing outside.");
+                }
+              }],
+              ["Wait inside",()=>{
+                if(chance(.35)){
+                  discover(
+                    "The Second Knock",
+                    "Several minutes later, the same three knocks came from inside the house."
+                  );
+                  log("You waited. The knocking happened again.");
+                }else{
+                  log("Nothing else happened.");
+                }
+              }],
+              ["Lock the door",()=>{
+                log("You locked the door and went back to sorting junk.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📨 Unordered Delivery",
+            text:"A courier hands you a package you definitely didn't order.",
+            choices:[
+              ["Open it",()=>{
+                addItem(rand(["tape","gear","bottle","disk"]));
+                discover(
+                  "Unordered Package",
+                  "Someone is sending objects directly to you."
+                );
+                log("Opened an unexplained package.");
+              }],
+              ["Refuse it",()=>{
+                state.money+=4;
+                log("The courier gave you $4 for taking the time to refuse the package.");
+              }]
+            ]
+          },
+        
+          {
+            title:"💻 Strange Message",
+            text:"Your computer displays: \"STOP SELLING THE OBJECTS.\"",
+            choices:[
+              ["Reply",()=>{
+                discover(
+                  "The Warning",
+                  "Someone knows about the objects you're selling."
+                );
+                log("Replied to the mysterious warning.");
+              }],
+              ["Take a screenshot",()=>{
+                discover(
+                  "The Message",
+                  "The message disappears immediately after being captured."
+                );
+                log("Captured the mysterious message.");
+              }],
+              ["Ignore it",()=>{
+                log("Ignored the strange message.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🚚 Strange Van",
+            text:"A van has stopped across the street. The driver appears to be looking at your house.",
+            choices:[
+              ["Watch from the window",()=>{
+                if(chance(.5)){
+                  discover(
+                    "The Van",
+                    "The van left after someone placed an envelope underneath your mailbox."
+                  );
+                  addItem("photo");
+                  log("Watched the van from the window.");
+                }else{
+                  log("The van eventually drove away.");
+                }
+              }],
+              ["Go outside",()=>{
+                if(chance(.4)){
+                  state.money+=15;
+                  log("The driver offered you $15 for an old object.");
+                }else{
+                  log("The driver drove away when you approached.");
+                }
+              }],
+              ["Stay inside",()=>{
+                log("You decided not to get involved.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🔑 Locked Shed",
+            text:"You notice a small shed behind your house that you've never seen before.",
+            choices:[
+              ["Look for a key",()=>{
+                if(has("key")){
+                  discover(
+                    "The Hidden Shed",
+                    "Your rusty key opens the mysterious shed."
+                  );
+                  state.money+=20;
+                  log("Your key opened the hidden shed.");
+                }else{
+                  log("You couldn't find anything that would open it.");
+                }
+              }],
+              ["Inspect the lock",()=>{
+                discover(
+                  "Strange Lock",
+                  "The lock has the same tiny door symbol found on one of your objects."
+                );
+                log("Inspected the shed's lock.");
+              }],
+              ["Leave it alone",()=>{
+                log("Left the strange shed alone.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📷 Someone in the Photograph",
+            text:"While sorting your junk, you notice that the person in an old photograph looks familiar.",
+            choices:[
+              ["Study the photograph",()=>{
+                discover(
+                  "The Photograph",
+                  "The background contains a building with the same symbol as the strange coin."
+                );
+                log("Studied the old photograph.");
+              }],
+              ["Put it away",()=>{
+                log("Put the photograph back in storage.");
+              }],
+              ["Sell it",()=>{
+                state.money+=12;
+                log("Sold the photograph.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🧸 The Toy Bear",
+            text:"You could swear the toy bear is facing a different direction than it was earlier.",
+            choices:[
+              ["Watch it",()=>{
+                if(has("bear")){
+                  discover(
+                    "The Moving Toy",
+                    "The bear seems to move when you look away."
+                  );
+                  log("Watched the toy bear.");
+                }else{
+                  log("You no longer have the bear.");
+                }
+              }],
+              ["Take it apart",()=>{
+                if(has("bear")){
+                  discover(
+                    "The Bear Mechanism",
+                    "There is a tiny mechanical component hidden inside the bear."
+                  );
+                  log("Inspected the toy bear.");
+                }else{
+                  log("You don't have the bear anymore.");
+                }
+              }],
+              ["Sell it",()=>{
+                const b=find("bear");
+        
+                if(b){
+                  state.money+=20;
+                  removeItem(b.uid);
+                  log("Sold the strange toy bear.");
+                }else{
+                  log("You don't have the bear anymore.");
+                }
+              }]
+            ]
+          },
+        
+          {
+            title:"📡 The Broadcast",
+            text:"Your radio suddenly turns itself on.",
+            choices:[
+              ["Listen",()=>{
+                if(has("radio")){
+                  discover(
+                    "The Broadcast",
+                    "A voice repeatedly says: 83.7."
+                  );
+                  log("Listened to the mysterious broadcast.");
+                }else{
+                  log("You don't have the radio anymore.");
+                }
+              }],
+              ["Unplug it",()=>{
+                log("Unplugged the radio.");
+              }],
+              ["Record it",()=>{
+                if(has("radio")){
+                  addItem("tape");
+                  discover(
+                    "Recorded Broadcast",
+                    "You managed to record part of the strange broadcast."
+                  );
+                  log("Recorded the strange radio signal.");
+                }else{
+                  log("There was nothing to record.");
+                }
+              }]
+            ]
+          },
+        
+          {
+            title:"🧲 Something Metallic",
+            text:"You hear a faint scraping noise somewhere in your house.",
+            choices:[
+              ["Use the magnet",()=>{
+                if(has("magnet")){
+                  discover(
+                    "Hidden Metal",
+                    "The magnet pulls toward something hidden behind the wall."
+                  );
+                  log("Used the magnet to investigate the scraping noise.");
+                }else{
+                  log("You don't have a magnet.");
+                }
+              }],
+              ["Follow the sound",()=>{
+                if(chance(.5)){
+                  addItem("gear");
+                  log("You found a tiny gear beneath a loose floorboard.");
+                }else{
+                  log("The sound stopped.");
+                }
+              }],
+              ["Ignore it",()=>{
+                log("Ignored the scraping noise.");
+              }]
+            ]
+          },
+        
+          {
+            title:"💵 Easy Money",
+            text:"An online buyer offers an unusually high price for one random item in your inventory.",
+            choices:[
+              ["Accept the offer",()=>{
+                if(state.inv.length){
+                  const x=rand(state.inv);
+                  const price=ITEMS[x.id].value*3;
+                  state.money+=price;
+                  log("Sold "+ITEMS[x.id].name+" for $"+price+".");
+                  removeItem(x.uid);
+                }else{
+                  log("You had nothing to sell.");
+                }
+              }],
+              ["Decline",()=>{
+                log("Declined the suspiciously generous offer.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🧪 The Blue Liquid",
+            text:"The blue bottle has started glowing brighter than before.",
+            choices:[
+              ["Put it in the dark",()=>{
+                if(has("bottle")){
+                  discover(
+                    "Blue Glow",
+                    "The liquid glows brightly when completely isolated from light."
+                  );
+                  log("Tested the blue bottle in darkness.");
+                }
+              }],
+              ["Shake it",()=>{
+                if(has("bottle")){
+                  if(chance(.5)){
+                    state.money+=10;
+                    log("The bottle reacted and produced something valuable.");
+                  }else{
+                    log("Nothing happened.");
+                  }
+                }
+              }],
+              ["Don't touch it",()=>{
+                log("Decided not to experiment with the bottle.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🛠️ Broken Machine",
+            text:"A neighbor asks whether you can repair an old machine.",
+            choices:[
+              ["Take a look",()=>{
+                if(has("gear") || has("screwdriver")){
+                  state.money+=18;
+                  discover(
+                    "Useful Junk",
+                    "Your supposedly worthless junk can actually be useful."
+                  );
+                  log("Repaired the machine using your junk.");
+                }else{
+                  log("You didn't have anything useful for the machine.");
+                }
+              }],
+              ["Ask for payment first",()=>{
+                state.money+=7;
+                log("The neighbor paid you $7 before you started.");
+              }],
+              ["Decline",()=>{
+                log("Declined the repair job.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📬 Anonymous Letter",
+            text:"A handwritten letter appears in your mailbox. It contains only one sentence: \"You have the key.\"",
+            choices:[
+              ["Keep the letter",()=>{
+                discover(
+                  "You Have the Key",
+                  "Someone believes you already possess an important key."
+                );
+                log("Kept the anonymous letter.");
+              }],
+              ["Destroy it",()=>{
+                log("Destroyed the anonymous letter.");
+              }],
+              ["Look for a key",()=>{
+                if(has("key")){
+                  discover(
+                    "The Correct Key",
+                    "The rusty key may be much more important than you thought."
+                  );
+                  log("Checked your collection for the key.");
+                }else{
+                  log("You don't have a key.");
+                }
+              }]
+            ]
+          },
+        
+          {
+            title:"🎁 A Free Offer",
+            text:"A seller online is giving away one mysterious object. Shipping costs $3.",
+            choices:[
+              ["Pay the shipping",()=>{
+                state.money-=3;
+                addItem(rand(["coin","key","box","disk","bottle"]));
+                log("Paid $3 for a mysterious object.");
+              }],
+              ["Pass",()=>{
+                log("Passed on the free object.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🕳️ Loose Floorboard",
+            text:"One floorboard has become loose. Something is underneath it.",
+            choices:[
+              ["Lift it",()=>{
+                if(chance(.65)){
+                  addItem(rand(["coin","gear","key"]));
+                  log("Found something underneath the floorboard.");
+                }else{
+                  state.money+=5;
+                  log("Found $5 underneath the floorboard.");
+                }
+              }],
+              ["Leave it",()=>{
+                log("Left the floorboard alone.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📦 Package Inspection",
+            text:"A delivery company offers to inspect your next package for dangerous materials.",
+            choices:[
+              ["Accept",()=>{
+                state.money-=2;
+                discover(
+                  "Package Inspection",
+                  "The inspection company seems unusually interested in your packages."
+                );
+                log("Paid $2 for a package inspection.");
+              }],
+              ["Decline",()=>{
+                log("Declined the package inspection.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🌧️ Rainy Delivery",
+            text:"Your package arrives soaked. One item inside has started rusting.",
+            choices:[
+              ["Open it immediately",()=>{
+                addItem(rand(["key","gear","box"]));
+                log("Opened the soaked package.");
+              }],
+              ["Let it dry first",()=>{
+                if(chance(.6)){
+                  addItem("coin");
+                  log("Let the package dry before opening it.");
+                }else{
+                  log("The package was already ruined.");
+                }
+              }]
+            ]
+          },
+        
+          {
+            title:"🔊 Noise Next Door",
+            text:"Your neighbor is making an extremely loud mechanical noise.",
+            choices:[
+              ["Investigate",()=>{
+                if(chance(.5)){
+                  state.money+=10;
+                  log("Your neighbor paid you $10 to help move some machinery.");
+                }else{
+                  discover(
+                    "The Workshop",
+                    "Your neighbor has been building machines from discarded junk."
+                  );
+                  log("Discovered your neighbor's strange workshop.");
+                }
+              }],
+              ["Ignore it",()=>{
+                log("Ignored the noise.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🪙 The Strange Coin",
+            text:"The strange coin feels warm even though the room is cold.",
+            choices:[
+              ["Inspect it",()=>{
+                if(has("coin")){
+                  discover(
+                    "Warm Coin",
+                    "The coin becomes warm whenever you're near something containing the same metal."
+                  );
+                  log("Inspected the strange coin.");
+                }
+              }],
+              ["Sell it",()=>{
+                const c=find("coin");
+        
+                if(c){
+                  state.money+=40;
+                  removeItem(c.uid);
+                  log("Sold the strange coin for $40.");
+                }
+              }],
+              ["Keep it",()=>{
+                log("Kept the strange coin.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📼 Cassette Recording",
+            text:"You find an old cassette player in a box of junk.",
+            choices:[
+              ["Play a tape",()=>{
+                if(has("tape")){
+                  discover(
+                    "The Recording",
+                    "The tape contains a voice describing a location you don't recognize."
+                  );
+                  log("Played the cassette.");
+                }else{
+                  log("You don't have a cassette tape.");
+                }
+              }],
+              ["Sell the player",()=>{
+                state.money+=9;
+                log("Sold the cassette player.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🗺️ A Strange Address",
+            text:"An address is scribbled on the back of a receipt you found.",
+            choices:[
+              ["Write it down",()=>{
+                discover(
+                  "The Address",
+                  "The address appears to correspond to a building in the photograph."
+                );
+                log("Recorded the mysterious address.");
+              }],
+              ["Throw it away",()=>{
+                log("Threw away the strange receipt.");
+              }]
+            ]
+          },
+        
+          {
+            title:"👤 Anonymous Buyer",
+            text:"A buyer wants to purchase one item from you but refuses to tell you why.",
+            choices:[
+              ["Ask what it's for",()=>{
+                if(chance(.5)){
+                  discover(
+                    "Anonymous Buyer",
+                    "The buyer knows more about your objects than they should."
+                  );
+                  log("Questioned the anonymous buyer.");
+                }else{
+                  log("The buyer refused to explain.");
+                }
+              }],
+              ["Sell something",()=>{
+                if(state.inv.length){
+                  const x=rand(state.inv);
+                  const price=ITEMS[x.id].value*2;
+                  state.money+=price;
+                  removeItem(x.uid);
+                  log("Sold "+ITEMS[x.id].name+" to the anonymous buyer for $"+price+".");
+                }
+              }],
+              ["Refuse",()=>{
+                log("Refused the anonymous buyer.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📡 Signal Detected",
+            text:"Something in your house is emitting a faint signal.",
+            choices:[
+              ["Search for it",()=>{
+                if(state.scanner || has("radio") || has("magnet")){
+                  discover(
+                    "Hidden Signal",
+                    "The signal seems to come from one of your strange objects."
+                  );
+                  log("Tracked the mysterious signal.");
+                }else{
+                  log("You couldn't locate the source.");
+                }
+              }],
+              ["Ignore it",()=>{
+                log("Ignored the signal.");
+              }]
+            ]
+          },
+        
+          {
+            title:"🏚️ The Old House",
+            text:"You recognize the house from one of your photographs while browsing an old map.",
+            choices:[
+              ["Mark its location",()=>{
+                discover(
+                  "The Location",
+                  "You now know where the house from the photograph is."
+                );
+                log("Marked the house on the map.");
+              }],
+              ["Keep looking",()=>{
+                if(chance(.5)){
+                  state.money+=6;
+                  log("You found an old coin while searching the map archive.");
+                }else{
+                  log("You found nothing else.");
+                }
+              }]
+            ]
+          },
+        
+          {
+            title:"🛒 Flash Sale",
+            text:"A seller has one item available for almost nothing, but you have no idea what it is.",
+            choices:[
+              ["Buy it for $5",()=>{
+                state.money-=5;
+                addItem(rand(["box","coin","key","bottle","disk"]));
+                log("Bought an unidentified item for $5.");
+              }],
+              ["Don't risk it",()=>{
+                log("Passed on the mystery item.");
+              }]
+            ]
+          },
+        
+          {
+            title:"💡 Power Flicker",
+            text:"The lights flicker whenever you bring one particular object near the wall.",
+            choices:[
+              ["Test your junk",()=>{
+                const x=rand(state.inv);
+        
+                if(x){
+                  if(ITEMS[x.id].tags.includes("electric") || ITEMS[x.id].tags.includes("mystery")){
+                    discover(
+                      "Electrical Reaction",
+                      x.name+" reacts strangely near the wall."
+                    );
+                    log("Tested "+ITEMS[x.id].name+" near the wall.");
+                  }else{
+                    log("Nothing happened.");
+                  }
+                }
+              }],
+              ["Leave it alone",()=>{
+                log("Ignored the electrical disturbance.");
+              }]
+            ]
+          },
+        
+          {
+            title:"📦 The Returned Package",
+            text:"A package you sold months ago has somehow been returned to you.",
+            choices:[
+              ["Open it",()=>{
+                addItem(rand(["coin","photo","tape"]));
+                discover(
+                  "Returned",
+                  "An object you thought was gone has somehow found its way back."
+                );
+                log("Opened the returned package.");
+              }],
+              ["Sell it again",()=>{
+                state.money+=15;
+                log("Sold the returned package without opening it.");
+              }]
+            ]
+          }
+        
+        ];
+          let e=rand(events);
+          showEvent(e);
+        }
+        function showEvent(e){
+          let area=document.getElementById("eventArea");
+        
+          area.innerHTML = `
+            <div class="event">
+              <b>${e.title}</b>
+              <div class="muted">${e.text}</div>
+              ${e.choices.map((c,i)=>`
+                <button class="choice" onclick="eventChoice(${i})">
+                  <b>${c[0]}</b>
+                </button>
+              `).join("")}
+            </div>
+          `;
+        
+          window.currentEvent=e;
+        }
+        function eventChoice(i){
+          let e=window.currentEvent;
+          if(!e)return;
+        
+          e.choices[i][1]();
+        
+          document.getElementById("eventArea").innerHTML="";
+          window.currentEvent=null;
+        
+          render();
+        }
+        
+        function selectItem(u){
+          state.selected=u;renderInventory();
+        }
+        function sellSelected(){
+          let x=state.inv.find(a=>a.uid===state.selected);if(!x)return;
+          let it=ITEMS[x.id], price=it.value;
+          if(state.betterBuyers){
+            price=Math.ceil(price*1.25);
+          }
+          if(!x.identified && chance(.08))price=Math.max(1,Math.floor(price*.7));
+          state.money+=price;state.stats.sold++;log("Sold "+it.name+" for $"+price+".");
+          removeItem(x.uid);state.selected=null;render();
+        }
+        function useSelected(){
+          let x=state.inv.find(a=>a.uid===state.selected);if(!x)return;
+          tryCombination(x);
+        }
+        function tryCombination(x){
+          const id=x.id;
+        
+          // Screwdriver + Tiny Box
+          if(id==="screwdriver" && has("box")){
+            const b=find("box");
+            removeItem(x.uid);
+            removeItem(b.uid);
+            addItem("coin",{identified:true});
+            discover(
+              "The Tiny Box",
+              "The screwdriver opened the tiny box. Inside was a strange coin."
+            );
+            log("Opened the tiny locked box with the screwdriver.");
+            state.selected=null;
+            render();
+            return;
+          }
+        
+          // Strange Coin + Tiny Box
+          if(id==="coin" && has("box")){
+            const b=find("box");
+            removeItem(x.uid);
+            removeItem(b.uid);
+            addItem("key",{identified:true});
+            discover(
+              "Coin-shaped Lock",
+              "The strange coin fits the tiny box and reveals a key."
+            );
+            log("The strange coin opened the tiny box.");
+            state.selected=null;
+            render();
+            return;
+          }
+        
+          // Battery + Radio
+          if(id==="battery" && has("radio")){
+            const r=find("radio");
+            r.identified=true;
+        
+            discover(
+              "Working Radio",
+              "A battery brings the broken radio to life. It keeps returning to 83.7."
+            );
+        
+            log("Powered the radio with the battery.");
+        
+            if(has("tape")){
+              discover(
+                "The Broadcast",
+                "The cassette contains a recording that only makes sense when played through the radio."
+              );
+              state.money+=15;
+              log("The radio decoded part of the cassette. Someone paid you $15 for the recording.");
+            }
+        
+            render();
+            return;
+          }
+        
+          // Magnet + Key
+          if(id==="magnet" && has("key")){
+            const k=find("key");
+            k.identified=true;
+        
+            discover(
+              "Magnetic Key",
+              "The key contains a hidden magnetic component."
+            );
+        
+            log("The magnet revealed something strange inside the rusty key.");
+        
+            if(has("coin")){
+              discover(
+                "Matching Metal",
+                "The strange coin and the key are made from the same unknown metal."
+              );
+              log("The coin and key appear to be connected.");
+            }
+        
+            render();
+            return;
+          }
+        
+          // Gear + Bear
+          if(id==="gear" && has("bear")){
+            const b=find("bear");
+            removeItem(x.uid);
+            b.identified=true;
+        
+            discover(
+              "Bear Mechanism",
+              "The toy bear contains a tiny machine."
+            );
+        
+            log("Opened the toy bear and found a tiny mechanism.");
+        
+            if(has("battery")){
+              discover(
+                "The Moving Bear",
+                "The battery makes the tiny mechanism inside the bear move."
+              );
+              state.money+=8;
+              log("The bear started moving. A collector paid you $8 for it.");
+            }
+        
+            render();
+            return;
+          }
+        
+          // Tape + Radio
+          if(id==="tape" && has("radio")){
+            discover(
+              "The Tape",
+              "The cassette contains a recording mentioning frequency 83.7."
+            );
+        
+            log("Played the cassette through the radio.");
+        
+            if(has("disk")){
+              discover(
+                "83.7",
+                "The disk, radio, tape and several other objects all reference 83.7."
+              );
+              state.money+=20;
+              log("You found another clue connecting the strange objects. Someone paid $20 for your notes.");
+            }
+        
+            render();
+            return;
+          }
+        
+          // Photo + Key
+          if(id==="photo" && has("key")){
+            discover(
+              "The House",
+              "The key looks like it could belong to the house in the photograph."
+            );
+        
+            log("The key may belong to the house in the photograph.");
+        
+            if(has("coin")){
+              discover(
+                "The Door",
+                "The symbol on the coin matches a symbol hidden on the house."
+              );
+              log("The coin symbol appears in the photograph.");
+            }
+        
+            render();
+            return;
+          }
+        
+          // Disk + Radio
+          if(id==="disk" && has("radio")){
+            discover(
+              "Recovered Data",
+              "The radio's strange frequency reveals information hidden on the disk."
+            );
+        
+            log("Used the radio to investigate the disk.");
+        
+            state.money+=18;
+            log("You sold a copy of the recovered data for $18.");
+        
+            render();
+            return;
+          }
+        
+          // Blue Bottle + Bear
+          if(id==="bottle" && has("bear")){
+            discover(
+              "Blue Glow",
+              "The liquid makes the stitching inside the bear glow."
+            );
+        
+            log("The blue liquid reacted with the toy bear.");
+        
+            if(has("gear")){
+              discover(
+                "Hidden Machine",
+                "The glowing stitching outlines the exact location of the bear's internal mechanism."
+              );
+              log("The bottle revealed the bear's hidden mechanism.");
+            }
+        
+            render();
+            return;
+          }
+        
+          // Screwdriver + Radio
+          if(id==="screwdriver" && has("radio")){
+            discover(
+              "Radio Repair",
+              "The screwdriver can open the radio, but you're missing a replacement component."
+            );
+        
+            log("Opened the radio casing.");
+        
+            if(has("gear")){
+              discover(
+                "Improvised Repair",
+                "The tiny gear is just the right size to repair the radio."
+              );
+              log("The gear repaired part of the radio.");
+            }
+        
+            render();
+            return;
+          }
+        
+          toast("Nothing obvious happens.");
+        }
+        function discover(name,desc){
+          if(state.discoveredNames.includes(name))return;
+          state.discoveredNames.push(name);state.discoveries.push({name,desc,day:state.day});toast("Discovery: "+name);saveGame()
+        }
+        
+        function buyMagnifier(){
+          if(state.magnifier){toast("You already own one.");return}
+          if(state.money<35){toast("Not enough money.");return}
+          state.money-=35;state.stats.spent+=35;state.magnifier=true;log("Bought a pocket magnifier.");render();
+        }
+        function buyStorage(){
+          if(state.storage>=32){toast("Storage is already maxed.");return}
+          if(state.money<60){toast("Not enough money.");return}
+          state.money-=60;state.stats.spent+=60;state.storage+=8;log("Expanded storage to "+state.storage+" slots.");render();
+        }
+        function buyAutoSell(){
+          if(state.autoSellDuplicates){
+            toast("Already installed.");
+            return;
+          }
+        
+          if(state.money < 45){
+            toast("Not enough money.");
+            return;
+          }
+        
+          state.money -= 45;
+          state.stats.spent += 45;
+          state.autoSellDuplicates = true;
+        
+          log("Installed the duplicate auto-seller.");
+          render();
+        }
+        function buyMailContract(){
+          if(state.mailContract){
+            toast("Already owned.");
+            return;
+          }
+        
+          if(state.money<25){
+            toast("Not enough money.");
+            return;
+          }
+        
+          state.money-=25;
+          state.stats.spent+=25;
+          state.mailContract=true;
+        
+          log("Signed a bulk mail contract.");
+          render();
+        }
+        function buyBetterBuyers(){
+          if(state.betterBuyers){
+            toast("Already owned.");
+            return;
+          }
+        
+          if(state.money<40){
+            toast("Not enough money.");
+            return;
+          }
+        
+          state.money-=40;
+          state.stats.spent+=40;
+          state.betterBuyers=true;
+        
+          log("Found better buyers for your junk.");
+          render();
+        }
+        function buyScanner(){
+          if(state.scanner){
+            toast("Already owned.");
+            return;
+          }
+        
+          if(state.money<75){
+            toast("Not enough money.");
+            return;
+          }
+        
+          state.money-=75;
+          state.stats.spent+=75;
+          state.scanner=true;
+        
+          log("Installed a signal scanner.");
+          render();
+        }
+        function magnify(){
+          if(!state.magnifier)return;
+          let x=state.inv.find(a=>a.uid===state.selected);if(!x)return;
+          let it=ITEMS[x.id];x.identified=true;discover(it.name+" — Magnified",it.clue);log("Magnified "+it.name+": "+it.clue);render();
+        }
+        
+        function render(){
+          document.getElementById("money").textContent=state.money;
+          document.getElementById("day").textContent=state.day;
+          document.getElementById("discoveries").textContent=state.discoveries.length;
+          document.getElementById("openBtn").disabled=state.openedToday;
+          document.getElementById("buyBtn").textContent="Buy mystery box ($10)";
+          document.getElementById("magnifyBtn").textContent=state.magnifier?"Owned":"Buy magnifier ($35)";
+          document.getElementById("storageBtn").textContent=state.storage>=32?"Maxed":"Upgrade ($60)";
+          renderInventory();renderLog();saveGame();
+        }
+        function renderInventory(){
+          let el=document.getElementById("inventory");
+          if(!state.inv.length){el.innerHTML='<div class="muted">Your inventory is empty.</div>';document.getElementById("selectedArea").innerHTML="";return}
+          el.innerHTML=state.inv.map(x=>{let it=ITEMS[x.id];return `<button class="item ${x.uid===state.selected?"selected":""}" onclick="selectItem('${x.uid}')"><span class="emoji">${it.emoji}</span><b>${it.name}</b><small>${x.identified?it.clue:it.desc}</small>${x.identified?'<span class="badge">KNOWN</span>':""}</button>`}).join("");
+          let x=state.inv.find(a=>a.uid===state.selected);
+          document.getElementById("selectedArea").innerHTML=x?`<button onclick="useSelected()">🔧 Try using it</button><button onclick="sellSelected()">💵 Sell for $${ITEMS[x.id].value}</button>${state.magnifier?'<button onclick="magnify()">🔎 Magnify</button>':""}`:"<span class='muted'>Select an item.</span>";
+        }
+        function renderLog(){document.getElementById("log").innerHTML=state.logs.map(x=>`<div>${escapeHtml(x)}</div>`).join("")}
+        function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+        
+        function showDiscoveries(){
+          let c=state.discoveries.length?state.discoveries.map(d=>`<div class="event"><b>${d.name}</b><br><span class="muted">${d.desc}</span><br><small>Day ${d.day}</small></div>`).join(""):"<p class='muted'>No discoveries yet.</p>";
+          modal("📓 Discoveries"+c);
+        }
+        function showStats(){
+          modal(`<h2>📊 Statistics</h2><p>Days survived: <b>${state.day}</b></p><p>Boxes opened: <b>${state.stats.boxes}</b></p><p>Items sold: <b>${state.stats.sold}</b></p><p>Money spent: <b>$${state.stats.spent}</b></p><p>Discoveries: <b>${state.discoveries.length}</b></p><p>Inventory: <b>${state.inv.length}/${state.storage}</b></p>`);
+        }
+        
+        function closeModal(){document.getElementById("modal").classList.add("hidden")}
+        function resetGame(){
+          if(!confirm("Delete your JUNKMAIL save? This cannot be undone."))return;
+          localStorage.removeItem("junkmail-save");location.reload();
+        }
+        
+        document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+          document.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+          ["mail","inv","shop"].forEach(t=>document.getElementById(t+"Tab").classList.toggle("hidden",b.dataset.tab!==t));
+        });
+        document.getElementById("openBtn").onclick=openPackage;
+        document.getElementById("buyBtn").onclick=buyBox;
+        
+        loadGame();
+        if(!state.logs.length)log("Welcome to JUNKMAIL. Your first package is waiting.");
+        if(!state.inv.length)START_ITEMS.forEach(addItem);
+        render();
+        document.getElementById("package").innerHTML=state.openedToday?'<div class="box">📦</div><b>Today\'s package is open.</b><small>Come back tomorrow for new mail.</small>':'<div class="box">📦</div><b>A suspicious package has arrived.</b><small>Open it and see what somebody thought was worth shipping.</small>';
+        // Clicking the day pill advances the day only after opening today's package.
+        document.getElementById("day").parentElement.style.cursor="pointer";
+        document.getElementById("day").parentElement.title="Click to start the next day";
+        document.getElementById("day").parentElement.onclick=()=>{if(!state.openedToday){toast("Open today's package first.");return}nextDay()};
+        window.buyBox = buyBox;
+        window.buyMagnifier = buyMagnifier;
+        window.buyStorage = buyStorage;
+        window.showDiscoveries = showDiscoveries;
+        window.showStats = showStats;
+        window.closeModal = closeModal;
+        window.resetGame = resetGame;
+        window.selectItem = selectItem;
+        window.eventChoice = eventChoice;
+        window.useSelected = useSelected;
+        window.sellSelected = sellSelected;
+        window.magnify = magnify;
+        window.buyAutoSell=buyAutoSell;
+        window.buyMailContract=buyMailContract;
+        window.buyBetterBuyers=buyBetterBuyers;
+        window.buyScanner=buyScanner;
+    </script>
+</body>
+
+</html>
