@@ -22,6 +22,8 @@ At the beginning of a new save, the player knows almost nothing about themselves
 
 And yet everyone else acts as though the player has lived there forever.
 
+The person the player is playing as **already existed**. You don't remember some things because **you are not that person**. That person used to be like everyone else, but **THEY ARE NOT YOU**.
+
 ### The photograph
 
 The old photograph is the first piece of the mystery and is **the same in every universe**.
@@ -32,7 +34,9 @@ Later, something causes the player to realize that the house in the photograph i
 
 Once the player looks outside, there is a shed.
 
-They are certain it was not there before.
+They are certain they had not noticed it there before.
+
+**And they hadn't.** It was always there, but they haven't seen it before.
 
 The unsettling part is that nobody else thinks this is strange.
 
@@ -110,9 +114,10 @@ The player has been useful to the thing.
 
 Without the packages, it has no reason to stay away.
 
-The player begins finding evidence that something is moving around the house at night. A package appears one final time containing an object that can be used to escape.
+The player begins finding evidence that something is moving around the house at night. A package appears one final time containing an object that can be used to escape. **The key to the shed.** When they look inside the shed, they discover a tunnel with a note in their handwriting next to it; it says:
+> "Good luck; I hope you escape"
 
-Then the thing comes inside.
+Then the thing comes inside the house.
 
 This universe turns the normal junk-mail loop into a survival sequence: the player must use objects they collected throughout the game to hide, distract, unlock, repair, and eventually escape.
 
@@ -344,8 +349,6 @@ The player finds objects that should not exist in their world.
 
 A coin has a country that doesn't exist.
 
-A photograph contains a building that is not present anywhere nearby.
-
 A package contains a newspaper describing an event that happened in another version of the world.
 
 Eventually the player learns that their universe was copied from another one.
@@ -362,39 +365,7 @@ The player may eventually receive something that proves another version of them 
 
 ---
 
-## AU-12 — The Wrong Player
-
-**Core truth:** Someone else was supposed to start this save.
-
-The house belongs to someone else.
-
-The inventory belongs to someone else.
-
-The packages were intended for someone else.
-
-The player has somehow taken their place.
-
-The original occupant occasionally fights back.
-
-This is the strongest version of the player's lack of control.
-
-Sometimes a choice is selected and the character refuses.
-
-Sometimes the character writes something in the case notes that the player did not type.
-
-Sometimes an item disappears because the original occupant used it while the player was not looking.
-
-Eventually the player receives a package addressed to the missing person.
-
-Inside is a note:
-
-> "Please give my life back."
-
-The player must decide whether they are the intruder, the replacement, or simply another person being controlled by something else.
-
----
-
-## AU-13 — The Empty Sender
+## AU-12 — The Empty Sender
 
 **Core truth:** The sender is not a person, company, creature, or machine.
 
@@ -475,27 +446,6 @@ Then:
 Finally:
 
 > things that seem to know the player.
-
----
-
-# The player's missing identity
-
-The player's missing name should remain deliberately unclear for a long time.
-
-The game should avoid simply saying "you have amnesia." That is too ordinary.
-
-Instead, the player should wonder whether:
-
-- they forgot their identity;
-- someone removed their identity;
-- they are a replacement for somebody else;
-- they are from another universe;
-- they have always lived here but were never themselves;
-- or the person controlling them is the one who actually has the missing identity.
-
-Different universes can eventually answer this differently.
-
-The player should never get a single explanation that makes every universe make sense.
 
 ---
 
