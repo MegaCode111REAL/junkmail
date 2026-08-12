@@ -157,6 +157,9 @@
 
     <script>
         "use strict";
+
+        let randItem = ""
+        let hasCasettePlayer = true
         
         function modal(html){
           const modal = document.getElementById("modal");
@@ -297,11 +300,11 @@
               ["Keep it",()=>{
                 const id=rand(["box","coin","disk","photo"]);
                 addItem(id);
-                log("Kept the wrongly delivered package.");
+                log("Kept the wrongly delivered package, it contained:" + ITEMS[id].name);
               }],
               ["Return it",()=>{
                 state.money+=8;
-                log("Returned the package.");
+                log("Returned the package, got $8.");
               }]
             ]
           },
@@ -326,7 +329,7 @@
                     "The Collector's Interest",
                     "The collector seems particularly interested in the unusual metal objects."
                   );
-                  log("Showed the collector your unusual objects.");
+                  log("Showed the collector your unusual objects. They seem interested in the metal.");
                 }else{
                   log("The collector wasn't interested in what you had.");
                 }
@@ -347,7 +350,7 @@
                     "83.7",
                     "The radio briefly locks onto 83.7 before returning to static."
                   );
-                  log("Checked the radio during the interference.");
+                  log("Checked the radio during the interference. It locked on to 83.7 for a second.");
                 }else{
                   log("There was no radio to investigate.");
                 }
@@ -405,7 +408,7 @@
                   "Unordered Package",
                   "Someone is sending objects directly to you."
                 );
-                log("Opened an unexplained package.");
+                log("Opened an unexplained package someone sent you.");
               }],
               ["Refuse it",()=>{
                 state.money+=4;
@@ -423,14 +426,14 @@
                   "The Warning",
                   "Someone knows about the objects you're selling."
                 );
-                log("Replied to the mysterious warning.");
+                log("Replied to the mysterious warning. Someone knows about the objects you're selling.");
               }],
               ["Take a screenshot",()=>{
                 discover(
                   "The Message",
                   "The message disappears immediately after being captured."
                 );
-                log("Captured the mysterious message.");
+                log("Captured the mysterious message. It disappears.");
               }],
               ["Ignore it",()=>{
                 log("Ignored the strange message.");
@@ -514,6 +517,7 @@
               ["Sell it",()=>{
                 state.money+=12;
                 log("Sold the photograph.");
+                removeItem("photo");
               }]
             ]
           },
@@ -528,9 +532,10 @@
                     "The Moving Toy",
                     "The bear seems to move when you look away."
                   );
-                  log("Watched the toy bear.");
+                  log("Watched the toy bear. It moved when you looked away.");
                 }else{
                   log("You no longer have the bear.");
+                  removeItem("bear")
                 }
               }],
               ["Take it apart",()=>{
@@ -539,7 +544,7 @@
                     "The Bear Mechanism",
                     "There is a tiny mechanical component hidden inside the bear."
                   );
-                  log("Inspected the toy bear.");
+                  log("Inspected the toy bear. There is a tiny mechanical component hidden inside the bear.");
                 }else{
                   log("You don't have the bear anymore.");
                 }
@@ -566,9 +571,9 @@
                 if(has("radio")){
                   discover(
                     "The Broadcast",
-                    "A voice repeatedly says: 83.7."
+                    "A voice repeatedly says: \"8, 3, 7\"."
                   );
-                  log("Listened to the mysterious broadcast.");
+                  log("Listened to the mysterious broadcast. A voice repeatedly says: \"8, 3, 7\".");
                 }else{
                   log("You don't have the radio anymore.");
                 }
@@ -601,7 +606,7 @@
                     "Hidden Metal",
                     "The magnet pulls toward something hidden behind the wall."
                   );
-                  log("Used the magnet to investigate the scraping noise.");
+                  log("Used the magnet to investigate the scraping noise. The magnet pulls toward something hidden behind the wall.");
                 }else{
                   log("You don't have a magnet.");
                 }
@@ -651,14 +656,14 @@
                     "Blue Glow",
                     "The liquid glows brightly when completely isolated from light."
                   );
-                  log("Tested the blue bottle in darkness.");
+                  log("Tested the blue bottle in darkness. It glowed brighter.");
                 }
               }],
               ["Shake it",()=>{
                 if(has("bottle")){
                   if(chance(.5)){
                     state.money+=10;
-                    log("The bottle reacted and produced something valuable.");
+                    log("The bottle reacted and produced something valuable. You sold it for $10.");
                   }else{
                     log("Nothing happened.");
                   }
@@ -716,7 +721,7 @@
                     "The Correct Key",
                     "The rusty key may be much more important than you thought."
                   );
-                  log("Checked your collection for the key.");
+                  log("Checked your collection for the key. The rusty key may be much more important than you thought...");
                 }else{
                   log("You don't have a key.");
                 }
@@ -731,7 +736,7 @@
               ["Pay the shipping",()=>{
                 state.money-=3;
                 addItem(rand(["coin","key","box","disk","bottle"]));
-                log("Paid $3 for a mysterious object.");
+                log("Paid $3 for a random object.");
               }],
               ["Pass",()=>{
                 log("Passed on the free object.");
@@ -768,7 +773,7 @@
                   "Package Inspection",
                   "The inspection company seems unusually interested in your packages."
                 );
-                log("Paid $2 for a package inspection.");
+                log("Paid $2 for a package inspection. The inspection company seems unusually interested in your packages.");
               }],
               ["Decline",()=>{
                 log("Declined the package inspection.");
@@ -781,13 +786,14 @@
             text:"Your package arrives soaked. One item inside has started rusting.",
             choices:[
               ["Open it immediately",()=>{
-                addItem(rand(["key","gear","box"]));
-                log("Opened the soaked package.");
+                randItem = rand(["key","gear","box"])
+                addItem(randItem);
+                log("Opened the soaked package. You got: " + randItem);
               }],
               ["Let it dry first",()=>{
                 if(chance(.6)){
                   addItem("coin");
-                  log("Let the package dry before opening it.");
+                  log("Let the package dry before opening it. You got a coin.");
                 }else{
                   log("The package was already ruined.");
                 }
@@ -855,7 +861,7 @@
                     "The Recording",
                     "The tape contains a voice describing a location you don't recognize."
                   );
-                  log("Played the cassette.");
+                  log("Played the cassette. The tape contains a voice describing a location you don't recognize.");
                 }else{
                   log("You don't have a cassette tape.");
                 }
@@ -863,6 +869,7 @@
               ["Sell the player",()=>{
                 state.money+=9;
                 log("Sold the cassette player.");
+                hasCasettePlayer=false
               }]
             ]
           },
@@ -876,7 +883,7 @@
                   "The Address",
                   "The address appears to correspond to a building in the photograph."
                 );
-                log("Recorded the mysterious address.");
+                log("Recorded the mysterious address. The address appears to correspond to a building in the photograph.");
               }],
               ["Throw it away",()=>{
                 log("Threw away the strange receipt.");
@@ -894,7 +901,7 @@
                     "Anonymous Buyer",
                     "The buyer knows more about your objects than they should."
                   );
-                  log("Questioned the anonymous buyer.");
+                  log("Questioned the anonymous buyer. They know more about your objects than they should.");
                 }else{
                   log("The buyer refused to explain.");
                 }
@@ -924,7 +931,7 @@
                     "Hidden Signal",
                     "The signal seems to come from one of your strange objects."
                   );
-                  log("Tracked the mysterious signal.");
+                  log("Tracked the mysterious signal. The signal seems to come from one of your strange objects.");
                 }else{
                   log("You couldn't locate the source.");
                 }
@@ -944,12 +951,12 @@
                   "The Location",
                   "You now know where the house from the photograph is."
                 );
-                log("Marked the house on the map.");
+                log("Marked the house on the map. You now know where the house from the photograph is.");
               }],
               ["Keep looking",()=>{
                 if(chance(.5)){
                   state.money+=6;
-                  log("You found an old coin while searching the map archive.");
+                  log("You found some money while searching the map archive.");
                 }else{
                   log("You found nothing else.");
                 }
@@ -961,10 +968,10 @@
             title:"🛒 Flash Sale",
             text:"A seller has one item available for almost nothing, but you have no idea what it is.",
             choices:[
-              ["Buy it for $5",()=>{
-                state.money-=5;
+              ["Buy it for $2",()=>{
+                state.money-=6;
                 addItem(rand(["box","coin","key","bottle","disk"]));
-                log("Bought an unidentified item for $5.");
+                log("Bought an unidentified item for $2.");
               }],
               ["Don't risk it",()=>{
                 log("Passed on the mystery item.");
@@ -985,7 +992,7 @@
                       "Electrical Reaction",
                       x.name+" reacts strangely near the wall."
                     );
-                    log("Tested "+ITEMS[x.id].name+" near the wall.");
+                    log("Tested "+ITEMS[x.id].name+" near the wall. It reacts strangely...");
                   }else{
                     log("Nothing happened.");
                   }
@@ -1007,7 +1014,7 @@
                   "Returned",
                   "An object you thought was gone has somehow found its way back."
                 );
-                log("Opened the returned package.");
+                log("Opened the returned package. You got some more junk.");
               }],
               ["Sell it again",()=>{
                 state.money+=15;
@@ -1107,12 +1114,12 @@
             const b=find("box");
             removeItem(x.uid);
             removeItem(b.uid);
-            addItem("coin",{identified:true});
+            addItem("coin");
             discover(
               "The Tiny Box",
               "The screwdriver opened the tiny box. Inside was a strange coin."
             );
-            log("Opened the tiny locked box with the screwdriver.");
+            log("Opened the tiny locked box with the screwdriver. Inside was a strange coin.");
             state.selected=null;
             render();
             return;
@@ -1123,12 +1130,13 @@
             const b=find("box");
             removeItem(x.uid);
             removeItem(b.uid);
+            state.money+=30
             addItem("key",{identified:true});
             discover(
               "Coin-shaped Lock",
               "The strange coin fits the tiny box and reveals a key."
             );
-            log("The strange coin opened the tiny box.");
+            log("The strange coin opened the tiny box. You got a key and $30.");
             state.selected=null;
             render();
             return;
@@ -1151,8 +1159,7 @@
                 "The Broadcast",
                 "The cassette contains a recording that only makes sense when played through the radio."
               );
-              state.money+=15;
-              log("The radio decoded part of the cassette. Someone paid you $15 for the recording.");
+              log("The radio decoded part of the cassette. Someone tried to pay you $15 for the recording, but you refused, confused..");
             }
         
             render();
@@ -1169,14 +1176,14 @@
               "The key contains a hidden magnetic component."
             );
         
-            log("The magnet revealed something strange inside the rusty key.");
+            log("The magnet revealed something strange inside the rusty key. The key contains a hidden magnetic component.");
         
             if(has("coin")){
               discover(
                 "Matching Metal",
                 "The strange coin and the key are made from the same unknown metal."
               );
-              log("The coin and key appear to be connected.");
+              log("The coin and key appear to be made of the same unusual metal.");
             }
         
             render();
@@ -1223,7 +1230,6 @@
                 "83.7",
                 "The disk, radio, tape and several other objects all reference 83.7."
               );
-              state.money+=20;
               log("You found another clue connecting the strange objects. Someone paid $20 for your notes.");
             }
         
@@ -1413,6 +1419,7 @@
           document.getElementById("buyBtn").textContent="Buy mystery box ($10)";
           document.getElementById("magnifyBtn").textContent=state.magnifier?"Owned":"Buy magnifier ($35)";
           document.getElementById("storageBtn").textContent=state.storage>=32?"Maxed":"Upgrade ($60)";
+          document.getElementById("autoSellBtn").textContent=state.autoSellDuplicates?"Owned":"Buy auto-seller ($45)";
           renderInventory();renderLog();saveGame();
         }
         function renderInventory(){
